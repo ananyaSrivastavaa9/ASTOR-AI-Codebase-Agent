@@ -1,8 +1,8 @@
 <p align="center">
   <h1 align="center">ASTOR</h1>
-  <p align="center"><strong>AI Codebase Agent</strong></p>
+  <p align="center"><strong>Retrieval-First Codebase Q&A</strong></p>
   <p align="center">
-    Index Python repos · hybrid retrieval · grounded answers with citations
+    Grounded answers with source citations. Not a chatbot wrapper.
   </p>
 </p>
 
@@ -15,17 +15,7 @@
   <img src="https://img.shields.io/badge/Gradio-UI-F97316" alt="Gradio" />
 </p>
 
-<p align="center">
-  <table align="center">
-    <tr>
-      <td align="center"><strong>85%</strong><br/>Retrieval accuracy<br/><sub>17 / 20 · Flask benchmark</sub></td>
-      <td align="center">&nbsp;&nbsp;·&nbsp;&nbsp;</td>
-      <td align="center"><strong>80%</strong><br/>Answer accuracy<br/><sub>16 / 20 · same benchmark</sub></td>
-      <td align="center">&nbsp;&nbsp;·&nbsp;&nbsp;</td>
-      <td align="center"><strong>25% → 85%</strong><br/>After retrieval fixes<br/><sub>measured, not estimated</sub></td>
-    </tr>
-  </table>
-</p>
+![ASTOR Banner](docs/assets/astor-banner.png)
 
 <p align="center">
   <strong>Demo GIF</strong> — <code>docs/assets/demo.gif</code> · <em>coming soon</em><br/>
@@ -34,31 +24,51 @@
 
 ---
 
-## Why ASTOR exists
+## Results
 
-Pasting a repo into chat does not scale. Context windows truncate, models invent file paths, and there is no way to verify an answer against source.
+**Measured on fixed 20-question Flask benchmark:**
 
-ASTOR treats codebase Q&A as **retrieval first, generation second**.
+- **Retrieval accuracy:** 85% (17/20)
+- **Answer accuracy:** 80% (16/20)  
+- **Improvement from fixes:** 25% → 85% retrieval accuracy
 
-| | Normal LLM | ASTOR |
-|---|------------|-------|
-| **Question** | *"Where is routing handled in Flask?"* | Same |
-| **What happens** | Guesses `app.py` or a generic Flask pattern | `search_codebase` → hybrid vector + BM25 retrieval |
-| **Source used** | None — answer may be plausible but wrong | `scaffold.py` · `add_url_rule` — retrieved from indexed chunks |
-| **Output** | Unverifiable prose | Answer + **Repo:** / **File:** citations |
+---
+
+## The Problem
+
+Pasting codebases into chat fails:
+- Context windows truncate large repos
+- Models hallucinate file paths and function names  
+- Answers lack verifiable sources
+- Q&A degrades to "plausible guess" instead of "proven fact"
+
+### The Solution: Retrieval First
+
+ASTOR inverts the pipeline. Instead of `User → LLM → Answer`, it runs:
 
 ```
 User question
-    → Gemini agent (tool-calling loop)
-        → search_codebase   hybrid retrieval over indexed chunks
-        → read_file         line-range reads from disk
-        → run_code          subprocess execution (5s timeout)
-        → review_file       structured code review
-        → explain_repo      repo onboarding guide
-    → Grounded answer + citations
+    ↓
+Indexing pipeline (once per repo):
+  • walker.py      — discover files (skip tests/, venvs, .git)
+  • parser.py      — Tree-sitter chunks at function/class boundaries
+  • indexer.py     — ChromaDB vectors + BM25 keywords
+    ↓
+Hybrid search (every query):
+  • ChromaDB semantic top-3 + BM25 keyword top-3
+  • Merge · dedupe · confidence gates
+    ↓
+Gemini agent tools:
+  • search_codebase    — Retrieve from indexed chunks
+  • read_file          — Line-range verification from disk
+  • run_code           — Execution traces (5s timeout)
+  • review_file        — Structured code inspection
+  • explain_repo       — Onboarding guide
+    ↓
+Grounded answer with Repo:/File: citations
 ```
 
-Not `User → LLM → answer`. A full indexing and retrieval pipeline runs before the model speaks.
+**Not** a wrapper around an LLM. A full **indexing and retrieval pipeline** runs *before* the model speaks.
 
 ---
 
@@ -67,7 +77,7 @@ Not `User → LLM → answer`. A full indexing and retrieval pipeline runs befor
 ```
 ┌──────────────────────────────── INDEX (once per repo) ────────────────────────────────┐
 │                                                                                       │
-│  repo path(s) ──► walker.py ──► parser.py ──► function/class chunks                 │
+│  repo path(s) ──► walker.py ──► parser.py ──► function/class chunks                   │
 │                      │              │                                                 │
 │                      │              ├──► SentenceTransformer (all-MiniLM-L6-v2)       │
 │                      │              │         └──► ChromaDB  (persistent vectors)     │
@@ -82,7 +92,7 @@ Not `User → LLM → answer`. A full indexing and retrieval pipeline runs befor
 │                 │              vector top-3 + BM25 top-3                              │
 │                 │              merge · dedupe · confidence fallback                   │
 │                 │                         │                                           │
-│                 └─────────────────────────┴──► answer + Repo/File citations         │
+│                 └─────────────────────────┴──► answer + Repo/File citations           │
 │                                                                                       │
 └───────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -95,8 +105,6 @@ Not `User → LLM → answer`. A full indexing and retrieval pipeline runs befor
 | Agent loop | `agent.py` | Gemini tool-calling, step limits, retries |
 | Tools | `tools.py` | `search_codebase`, `read_file`, `run_code` |
 | UI | `app.py` | Gradio — index, ask, citation cards |
-
-Generate architecture banner: `python scripts/generate_banner.py` → `docs/assets/astor-banner.png`
 
 ---
 
@@ -135,7 +143,7 @@ python eval/inspect_retrieval.py
 
 ## Engineering highlights
 
-### Hybrid retrieval was broken (~25% accuracy)
+### Debugging hybrid retrieval: 25% → 85%
 
 | | |
 |---|---|
