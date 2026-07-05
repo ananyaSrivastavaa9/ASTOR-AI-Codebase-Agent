@@ -193,11 +193,13 @@ def generate_banner() -> Path:
     draw = ImageDraw.Draw(img)
 
     fonts = {
-        "brand": _load_font(28, bold=True),
-        "tag": _load_font(11),
-        "label": _load_font(13, bold=True),
+        "brand": _load_font(34, bold=True),
+        "step_num": _load_font(42, bold=True),
+        "tag": _load_font(13),
+        "label": _load_font(15, bold=True),
         "tiny": _load_font(11),
         "mono": _load_font(12),
+        "mono_med": _load_font(14),
         "mono_sm": _load_font(10),
         "card_title": _load_font(15, bold=True),
     }
