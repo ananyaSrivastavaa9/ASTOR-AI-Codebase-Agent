@@ -1,250 +1,221 @@
-# ASTOR — AI Codebase Agent
+<p align="center">
+  <h1 align="center">ASTOR</h1>
+  <p align="center"><strong>AI Codebase Agent</strong></p>
+  <p align="center">
+    Index Python repos · hybrid retrieval · grounded answers with citations
+  </p>
+</p>
 
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
-![Gradio](https://img.shields.io/badge/Gradio-UI-F97316)
-![Gemini](https://img.shields.io/badge/Gemini-API-4285F4?logo=google&logoColor=white)
-![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector_Store-FF6F00)
-![RAG](https://img.shields.io/badge/RAG-Hybrid_Retrieval-6366F1)
-![Eval](https://img.shields.io/badge/Eval-20--Question_Benchmark-22C55E)
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white" alt="Python 3.10+" />
+  <img src="https://img.shields.io/badge/Gemini-Tool_Calling-4285F4?logo=google&logoColor=white" alt="Gemini" />
+  <img src="https://img.shields.io/badge/ChromaDB-Vector_Store-FF6F00" alt="ChromaDB" />
+  <img src="https://img.shields.io/badge/Retrieval-Hybrid_Vector_+_BM25-6366F1" alt="Hybrid RAG" />
+  <img src="https://img.shields.io/badge/Eval-20--Question_Benchmark-22C55E" alt="Eval" />
+  <img src="https://img.shields.io/badge/Gradio-UI-F97316" alt="Gradio" />
+</p>
 
-**Index Python repos. Retrieve the right source. Answer with citations.**
+<p align="center">
+  <table align="center">
+    <tr>
+      <td align="center"><strong>85%</strong><br/>Retrieval accuracy<br/><sub>17 / 20 · Flask benchmark</sub></td>
+      <td align="center">&nbsp;&nbsp;·&nbsp;&nbsp;</td>
+      <td align="center"><strong>80%</strong><br/>Answer accuracy<br/><sub>16 / 20 · same benchmark</sub></td>
+      <td align="center">&nbsp;&nbsp;·&nbsp;&nbsp;</td>
+      <td align="center"><strong>25% → 85%</strong><br/>After retrieval fixes<br/><sub>measured, not estimated</sub></td>
+    </tr>
+  </table>
+</p>
 
-ASTOR is a measured retrieval + agent system for Python codebases — not a prompt pasted into an LLM. It indexes repositories with Tree-sitter, searches with hybrid vector + keyword retrieval, and answers through a Gemini tool-calling agent that cites the files it used.
-
-| Metric | Result | Benchmark |
-|--------|--------|-----------|
-| **Retrieval accuracy** | **85%** (17/20) | 20-question Flask suite |
-| **Answer accuracy** | **80%** (16/20) | Same suite, generation quality |
-| **Retrieval before fixes** | ~25% | Same suite — pre hybrid-search fix |
-| **Index optimization** | ~52s test run | Optimized multi-repo indexing workflow | 
-
-> Most portfolio AI projects never measure retrieval. ASTOR does — with separate retrieval vs. generation metrics and a failure inspector.
-
----
-
-## Demo
-
-| | |
-|---|---|
-| **Demo video** | In progress — index → ask → cited answer walkthrough |
-| **Live demo** | Hugging Face Spaces deployment planned |
-
-<!-- Optional hero assets (add when ready):
-  Banner:  python scripts/generate_banner.py  →  docs/assets/astor-banner.png
-  GIF:     docs/assets/astor-demo.gif  (index → question → citation cards)
--->
+<p align="center">
+  <strong>Demo GIF</strong> — <code>docs/assets/demo.gif</code> · <em>coming soon</em><br/>
+  <strong>Live demo</strong> — Hugging Face Space · <em>coming soon</em>
+</p>
 
 ---
 
-## The problem
+## Why ASTOR exists
 
-Exploring an unfamiliar Python codebase means grepping symbols, opening files, tracing imports, and still guessing at structure.
+Pasting a repo into chat does not scale. Context windows truncate, models invent file paths, and there is no way to verify an answer against source.
 
-**Why a normal LLM over files is insufficient:**
+ASTOR treats codebase Q&A as **retrieval first, generation second**.
 
-| Approach | Failure mode |
-|----------|--------------|
-| Paste files into chat | Context windows truncate; large repos don't fit |
-| Ask without retrieval | Model hallucinates APIs and file paths |
-| Vector search alone | Identifier-heavy queries (`add_url_rule`, class names) embed weakly |
-| No citations | Answers drift from actual source; impossible to verify |
+| | Normal LLM | ASTOR |
+|---|------------|-------|
+| **Question** | *"Where is routing handled in Flask?"* | Same |
+| **What happens** | Guesses `app.py` or a generic Flask pattern | `search_codebase` → hybrid vector + BM25 retrieval |
+| **Source used** | None — answer may be plausible but wrong | `scaffold.py` · `add_url_rule` — retrieved from indexed chunks |
+| **Output** | Unverifiable prose | Answer + **Repo:** / **File:** citations |
 
-ASTOR treats the codebase as a **retrieval problem first**, then an **agent problem**.
+```
+User question
+    → Gemini agent (tool-calling loop)
+        → search_codebase   hybrid retrieval over indexed chunks
+        → read_file         line-range reads from disk
+        → run_code          subprocess execution (5s timeout)
+        → review_file       structured code review
+        → explain_repo      repo onboarding guide
+    → Grounded answer + citations
+```
+
+Not `User → LLM → answer`. A full indexing and retrieval pipeline runs before the model speaks.
 
 ---
 
 ## Architecture
 
-```mermaid
-flowchart TB
-    subgraph Index["Indexing (once per repo set)"]
-        R[Local repo path(s)] --> W[walker.py]
-        W --> P[parser.py<br/>Tree-sitter AST]
-        P --> C[Function/class chunks]
-        C --> E[SentenceTransformer<br/>all-MiniLM-L6-v2]
-        E --> V[(ChromaDB<br/>persistent vectors)]
-        C --> B[BM25 keyword index<br/>in-memory]
-    end
+```
+┌──────────────────────────────── INDEX (once per repo) ────────────────────────────────┐
+│                                                                                       │
+│  repo path(s) ──► walker.py ──► parser.py ──► function/class chunks                 │
+│                      │              │                                                 │
+│                      │              ├──► SentenceTransformer (all-MiniLM-L6-v2)       │
+│                      │              │         └──► ChromaDB  (persistent vectors)     │
+│                      │              └──► BM25 index  (in-memory keyword search)       │
+│                                                                                       │
+└───────────────────────────────────────────────────────────────────────────────────────┘
 
-    subgraph Query["Query path"]
-        Q[Natural language question] --> UI[Gradio UI]
-        UI --> A[agent.py<br/>Gemini tool loop]
-        A --> S[search_codebase]
-        S --> H[Hybrid retrieval<br/>vector + BM25 merge]
-        H --> V
-        H --> B
-        A --> T[read_file · run_code · review_file · explain_repo]
-        T --> AN[Grounded answer + Repo/File citations]
-    end
+┌──────────────────────────────── QUERY (every question) ───────────────────────────────┐
+│                                                                                       │
+│  question ──► agent.py ──► tools ──► indexer.search()                                 │
+│                 │                         │                                           │
+│                 │              vector top-3 + BM25 top-3                              │
+│                 │              merge · dedupe · confidence fallback                   │
+│                 │                         │                                           │
+│                 └─────────────────────────┴──► answer + Repo/File citations         │
+│                                                                                       │
+└───────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Not:** `User → LLM → answer`
+| Component | File | Role |
+|-----------|------|------|
+| File discovery | `walker.py` | Walk repo, skip `tests/`, venvs, `.git`, etc. |
+| AST parsing | `parser.py` | Tree-sitter chunks at function/class boundaries |
+| Hybrid search | `indexer.py` | ChromaDB vectors + BM25 merge |
+| Agent loop | `agent.py` | Gemini tool-calling, step limits, retries |
+| Tools | `tools.py` | `search_codebase`, `read_file`, `run_code` |
+| UI | `app.py` | Gradio — index, ask, citation cards |
 
-**Actually:**
-
-```
-Repository
-  → file walker          (walker.py)
-  → Tree-sitter parsing  (parser.py)
-  → function/class chunks
-  → SentenceTransformer embeddings
-  → ChromaDB vector storage
-  → BM25 keyword index
-  → hybrid retrieval     (indexer.py)
-  → Gemini agent + tools (agent.py)
-  → grounded answer + citations
-```
-
-Most AI demos stop at the last arrow. ASTOR engineers everything before it.
+Generate architecture banner: `python scripts/generate_banner.py` → `docs/assets/astor-banner.png`
 
 ---
 
-## Evaluation
+## Benchmark
 
-A fixed **20-question Flask benchmark** with expected files and functions. Retrieval and generation are scored independently — so you can tell whether a failure is search or the model.
-
-| Script | Role |
-|--------|------|
-| `eval/questions.py` | 20 Flask questions + expected file/function targets |
-| `eval/run_eval.py` | Runs all questions; reports retrieval vs. answer accuracy |
-| `eval/inspect_retrieval.py` | Diagnoses failures into three buckets |
-| `eval/debug_single.py` | Dumps agent message history for one question |
-
-**Failure diagnosis** (`inspect_retrieval.py`):
-
-| Bucket | Meaning |
-|--------|---------|
-| Not indexed | Expected file never entered ChromaDB |
-| Not chunked | File indexed but expected function missing from chunks |
-| Ranking failed | Chunk exists but hybrid search didn't surface it |
-
-```bash
-python eval/run_eval.py
-python eval/inspect_retrieval.py
-```
-
-**Final benchmark (Flask codebase):**
+Most AI projects never measure retrieval quality. ASTOR does — on a fixed **20-question Flask suite** with expected files and functions.
 
 | Metric | Score |
 |--------|-------|
 | Retrieval accuracy | **85%** (17/20) |
 | Answer accuracy | **80%** (16/20) |
 
-The ~25% → 85% retrieval jump came from fixing hybrid search — not from switching models.
+Retrieval and generation are scored **separately** — a wrong answer can mean bad search or bad generation, and the eval tells you which.
+
+| Script | Purpose |
+|--------|---------|
+| `eval/questions.py` | 20 Flask questions + expected targets |
+| `eval/run_eval.py` | Runs benchmark · reports retrieval vs. answer accuracy |
+| `eval/inspect_retrieval.py` | Diagnoses failures by bucket |
+| `eval/debug_single.py` | Single-question agent trace dump |
+
+**Failure buckets** (`inspect_retrieval.py`):
+
+| Bucket | Diagnosis |
+|--------|-----------|
+| Not indexed | Expected file never entered ChromaDB |
+| Not chunked | File indexed but function missing from chunks |
+| Ranking failed | Chunk exists but hybrid search didn't rank it |
+
+```bash
+python eval/run_eval.py
+python eval/inspect_retrieval.py
+```
 
 ---
 
-## Engineering problems discovered and solved
+## Engineering highlights
 
-These are the threads that separate ASTOR from an API wrapper.
+### Hybrid retrieval was broken (~25% accuracy)
 
-### 1. Hybrid retrieval blocked by an early return
+| | |
+|---|---|
+| **Bug** | `indexer.search()` returned early on weak vector similarity — BM25 never ran |
+| **Symptom** | Natural-language questions against code failed; identifier queries like *"Where is `add_url_rule`?"* missed |
+| **Fix** | Always run vector + BM25, merge by `(file, start_line)`, fallback only when **both** fail |
+| **Result** | Retrieval **25% → 85%** |
 
-**Symptom:** Natural-language questions over code failed retrieval (~25% accuracy).
+### ChromaDB opened the wrong database
 
-**Root cause:** `indexer.search()` returned early when vector similarity was weak. BM25 never ran — but keyword matching is exactly what rescues queries like *"Where is `add_url_rule`?"* against raw source text.
+| | |
+|---|---|
+| **Bug** | `DB_PATH` was relative to cwd — running eval from `eval/` silently used an empty index |
+| **Fix** | Resolve path relative to `indexer.py` |
+| **Result** | Eval metrics became trustworthy across entry points |
 
-**Fix:** Always run vector search and BM25, merge and deduplicate by `(file, start_line)`, and fall back only when **both** signals fail (`top_similarity < 0.35` and BM25 score is zero).
+### Indexing at scale
 
-**Impact:** Retrieval **25% → 85%**.
+- Batched `SentenceTransformer.encode()` + single `collection.add()` write
+- Duplicate chunk prevention when repo paths overlap
+- Per-repo caps (600 files / 4000 chunks)
+- Stage progress logs (walk → parse → embed → write)
+- Smaller multi-repo test (Flask + second repo): **~52s** with visible progress
 
-### 2. ChromaDB path depended on working directory
+### Agent reliability
 
-**Symptom:** Running eval from `eval/` silently opened an empty database. Metrics looked broken; the index was fine.
-
-**Root cause:** `DB_PATH` was relative to the process cwd, not the project.
-
-**Fix:** Resolve `DB_PATH` relative to `indexer.py` (`os.path.dirname(__file__)`).
-
-**Impact:** Eval became trustworthy; multi-entry-point usage stopped diverging.
-
-### 3. Indexing wasted work on large multi-repo sets
-
-**Symptom:** Multi-repo indexing had poor progress feedback and long-running operations.
-
-**Fixes (production-inspired, not production-scale):**
-- Batched `SentenceTransformer.encode()` and single `collection.add()` write
-- Dedup chunks when repo paths overlap or nest
-- Per-repo caps (600 files / 4000 chunks) so one huge repo cannot starve others
-- Skip high-noise dirs in `walker.py` (`tests/`, `docs/`, `migrations/`, venvs, `.git`, …)
-- Stage-level progress logs (walk → parse → embed → DB write)
-
-**Result:** Indexing responsiveness improved; a smaller multi-repo test (Flask + second repo) completed in **~52 seconds** with visible progress.
-
----
-
-## Retrieval pipeline
-
-`indexer.search()` is the core engineering surface:
-
-| Step | Implementation |
-|------|----------------|
-| Vector search | `all-MiniLM-L6-v2` embeddings in persistent ChromaDB (`db/`) |
-| Keyword search | `rank_bm25` over tokenized chunks; top-3 merged in |
-| Dedup | Merge by `(file, start_line)` across both channels |
-| Empty index | Returns `"Please index a repo first"` |
-| Low confidence | Rephrase prompt only when vector **and** BM25 both fail |
-
-Source citations flow through `tools.py` as `Repo:` / `File:` pairs, rendered as UI chips in `app.py`.
-
----
-
-## Multi-repository support
-
-Index one or two local Python repos from the UI. Each chunk stores `repo_name` in metadata; citations show which repository an answer came from.
-
-**Example:** Ask *"How is routing handled?"* after indexing Flask and Django — compare framework-specific implementations with repo-aware citations.
-
----
-
-## Reliability
-
-Built with production-inspired practices for a local research tool:
-
-| Area | Detail |
-|------|--------|
-| API errors | Gemini retry on failure; clean user-facing message instead of traceback |
-| Tool timeouts | `explain_repo`: 90s · `review_file`: 60s · default: 30s |
-| Code execution | `run_code` in isolated subprocess, **5-second timeout** (not a security sandbox) |
-| File reads | Safe handling for missing paths and invalid line ranges |
-| Agent limits | Step cap (8) · conversation history cap (30 messages) |
-| Search guard | Duplicate `search_codebase` blocked per question |
-| Empty state | Clear fallback when no repository is indexed |
+| Control | Detail |
+|---------|--------|
+| API failures | Gemini retry · clean error surface (no raw traceback) |
+| Step limit | 8 agent steps per question |
+| History cap | 30 messages |
+| Tool timeouts | `explain_repo` 90s · `review_file` 60s · default 30s |
+| `run_code` | Subprocess · **5s timeout** (not a sandbox) |
+| File reads | Missing path + invalid line range handling |
+| Search guard | One `search_codebase` call per question |
+| Empty index | `"Please index a repo first"` fallback |
 
 ---
 
 ## Features
 
-| Area | Detail |
-|------|--------|
-| **Indexing** | Tree-sitter chunks at function/class boundaries |
-| **Multi-repo** | Two repo inputs from UI; `repo_name` on every chunk |
-| **Hybrid search** | ChromaDB semantic + BM25 keyword, merged |
-| **Agent tools** | Search, read, run code, review file, explain repo |
-| **Citations** | Repo-aware `Repo:` / `File:` pairs in answers |
-| **UI** | Gradio app with thinking trace, starter questions, citation cards |
+| | |
+|---|---|
+| **Hybrid retrieval** | ChromaDB semantic search + BM25 keyword search, merged and deduped |
+| **AST-aware chunks** | Tree-sitter function/class boundaries — not arbitrary line splits |
+| **Multi-repo** | Index two repos · `repo_name` on every chunk · repo-aware citations |
+| **Agent tools** | Search, read, execute, review, explain |
+| **Citations** | `Repo:` / `File:` pairs from tool results → UI citation cards |
+| **UI** | Gradio with thinking trace and starter questions |
 
-Backend retrieval and eval are the primary value; the UI is the entry point.
+Backend retrieval and eval are the core. The UI is the entry point.
 
----
-
-## Tech stack
-
-| Layer | Tools |
-|-------|-------|
-| UI | Gradio, Markdown rendering |
-| LLM | Google Gemini API (`google-genai`) |
-| Vector store | ChromaDB (persistent) |
-| Embeddings | SentenceTransformers (`all-MiniLM-L6-v2`) |
-| Keyword search | `rank_bm25` |
-| Parsing | Tree-sitter (`tree-sitter-python`) |
-| Config | `python-dotenv` |
+**Multi-repo example:** Index Flask and Django, ask *"How is routing handled?"* — compare implementations with citations from each repo.
 
 ---
 
-## Setup
+## Retrieval pipeline
 
-**Prerequisites:** Python 3.10+, [Gemini API key](https://aistudio.google.com/apikey)
+`indexer.search()` — the core retrieval surface:
+
+```
+query
+  ├─► ChromaDB vector search (top 3)
+  ├─► BM25 keyword search (top 3)
+  ├─► merge + dedupe by (file, start_line)
+  └─► fallback rephrase prompt only if vector AND BM25 both fail
+```
+
+| Signal | Implementation |
+|--------|----------------|
+| Embeddings | `all-MiniLM-L6-v2` via SentenceTransformers |
+| Vector store | Persistent ChromaDB at `db/` |
+| Keywords | `rank_bm25` over tokenized chunks |
+| Confidence gate | `top_similarity < 0.35` and BM25 score ≤ 0 |
+
+---
+
+## Quick start
+
+**Requires:** Python 3.10+, [Gemini API key](https://aistudio.google.com/apikey)
 
 ```bash
 git clone <your-repo-url>
@@ -259,21 +230,30 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Create `.env`:
+`.env`:
 
 ```env
 GEMINI_API_KEY=your_key_here
 ```
 
-Run:
-
 ```bash
 python app.py
 ```
 
-Enter one or two local repository paths → **Index this repo** → ask a question.
+Index one or two local Python repo paths → ask a question → inspect citation cards.
 
-Optional — regenerate README banner: `python scripts/generate_banner.py` (requires `pillow`).
+---
+
+## Tech stack
+
+| Layer | Choice |
+|-------|--------|
+| LLM | Google Gemini (`google-genai`) — tool calling |
+| Vectors | ChromaDB |
+| Embeddings | SentenceTransformers · `all-MiniLM-L6-v2` |
+| Keywords | `rank_bm25` |
+| Parsing | Tree-sitter · `tree-sitter-python` |
+| UI | Gradio |
 
 ---
 
@@ -281,52 +261,40 @@ Optional — regenerate README banner: `python scripts/generate_banner.py` (requ
 
 ```
 codebase-agent/
-├── app.py                 # Gradio UI, citations, index/ask handlers
-├── agent.py               # Gemini tool loop (sync + streaming)
-├── indexer.py             # ChromaDB + embeddings + BM25 hybrid search
-├── parser.py              # Tree-sitter chunk extraction
-├── walker.py              # File discovery + ignore rules
-├── tools.py               # search_codebase, read_file, run_code
-├── config.py              # Model name, step/history limits
-├── rag.py                 # RAG baseline (search → single LLM call)
-├── scripts/
-│   └── generate_banner.py # README banner generator
+├── app.py                  # Gradio UI · citations · index/ask
+├── agent.py                # Gemini tool loop
+├── indexer.py              # ChromaDB + BM25 hybrid search
+├── parser.py               # Tree-sitter chunk extraction
+├── walker.py               # File discovery + ignore rules
+├── tools.py                # Agent tools
+├── config.py               # Model · step/history limits
+├── rag.py                  # RAG baseline (search → single LLM call)
 ├── features/
-│   ├── onboarding.py      # explain_repo tool
-│   ├── code_review.py     # review_file tool
-│   └── status_messages.py # Thinking-trace strings
-└── eval/
-    ├── questions.py         # 20-question Flask benchmark
-    ├── run_eval.py          # Retrieval + answer accuracy
-    ├── inspect_retrieval.py # Failure diagnosis
-    └── debug_single.py      # Single-question trace dump
+│   ├── onboarding.py       # explain_repo
+│   ├── code_review.py      # review_file
+│   └── status_messages.py  # Thinking-trace strings
+├── eval/
+│   ├── questions.py        # 20-question Flask benchmark
+│   ├── run_eval.py         # Retrieval + answer accuracy
+│   ├── inspect_retrieval.py
+│   └── debug_single.py
+└── scripts/
+    └── generate_banner.py
 ```
 
 ---
 
 ## Limitations
 
-Honest scope — portfolio-grade engineering project, not a deployed product at scale:
-
-- **Python only** — `.py` files via Tree-sitter; no other languages
-- **Local paths** — repos on disk; no GitHub URL cloning
-- **Chunk granularity** — function/class level; cross-file reasoning depends on retrieval quality
-- **Single-machine** — in-process ChromaDB + BM25; no distributed or incremental indexing
-- **LLM dependency** — requires live Gemini API; no offline mode
-- **Code execution** — `run_code` has a timeout, not full sandbox isolation
+- **Python only** — Tree-sitter parsing for `.py` files
+- **Local paths** — no GitHub URL cloning
+- **Single machine** — in-process ChromaDB + BM25; no distributed indexing
+- **Chunk level** — function/class granularity; cross-file reasoning depends on retrieval
+- **LLM required** — live Gemini API; no offline mode
+- **`run_code`** — timeout only, not full sandbox isolation
 
 ---
 
-## Interview talking points
-
-If you have 5 minutes on this repo:
-
-1. **Why hybrid retrieval for code** — embeddings miss identifier-heavy queries; BM25 compensates; an early-return bug proved it (25% → 85%).
-2. **Eval-driven debugging** — separate retrieval vs. generation metrics; three-bucket inspector localizes failures to indexing, chunking, or ranking.
-3. **Silent persistence bug** — cwd-relative `DB_PATH` broke eval until path was anchored to `indexer.py`.
-4. **Indexing efficiency** — batched embed/write, dedup, per-repo caps, directory filtering; ~52s on a smaller multi-repo test.
-5. **Agent discipline** — tool timeouts, retry handling, single-search guard, citation propagation from tool results to UI.
-
----
-
-**ASTOR** — built, measured, debugged, and improved as a retrieval system first.
+<p align="center">
+  <sub>Built, measured, debugged, and improved as a retrieval system — not a chatbot wrapper.</sub>
+</p>
