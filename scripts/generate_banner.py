@@ -102,32 +102,20 @@ def _draw_index_panel(
     fonts: dict,
 ) -> None:
     x0, y0, x1, y1 = box
-    _draw_panel_frame(draw, box, "1 · INDEX", fonts["label"], fonts["tiny"])
+    _draw_panel_frame(draw, box, "INDEX", fonts["label"], fonts["tiny"])
 
+    # Central step number
+    draw.text((x0 + 32, y0 + 48), "1", fill=ACCENT, font=fonts["step_num"])
+    
+    # Larger content area
     tree_x = x0 + 24
-    tree_y = y0 + 52
+    tree_y = y0 + 100
     files = ["app.py", "routes/", "models.py", "utils/"]
     for i, name in enumerate(files):
-        indent = 0 if i == 0 else 14
-        draw.text((tree_x + indent, tree_y + i * 22), name, fill=INK_FAINT, font=fonts["mono"])
+        indent = 0 if i == 0 else 16
+        draw.text((tree_x + indent, tree_y + i * 28), name, fill=INK, font=fonts["mono_med"])
 
-    arrow_x = x0 + 130
-    mid_y = y0 + 110
-    draw.line([(arrow_x, mid_y), (arrow_x + 36, mid_y)], fill=ACCENT_SOFT, width=2)
-    draw.polygon([(arrow_x + 36, mid_y), (arrow_x + 28, mid_y - 5), (arrow_x + 28, mid_y + 5)], fill=ACCENT_SOFT)
-
-    chunk_x = x0 + 180
-    chunks = [
-        ("def dispatch_request", CODE_GREEN),
-        ("class Flask", CODE_BLUE),
-        ("def add_url_rule", CODE_GREEN),
-    ]
-    for i, (text, color) in enumerate(chunks):
-        cy = y0 + 58 + i * 34
-        _rounded_rect(draw, (chunk_x, cy, x1 - 20, cy + 26), 6, fill=(36, 28, 58), outline=(143, 110, 242, 80), width=1)
-        draw.text((chunk_x + 8, cy + 5), text, fill=color, font=fonts["mono_sm"])
-
-    draw.text((x0 + 16, y1 - 28), "Tree-sitter AST chunks", fill=INK_FAINT, font=fonts["tiny"])
+    draw.text((x0 + 16, y1 - 28), "AST Parsing", fill=INK_DIM, font=fonts["tiny"])
 
 
 def _draw_retrieval_panel(
