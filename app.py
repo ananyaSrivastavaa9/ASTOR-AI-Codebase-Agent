@@ -756,4 +756,7 @@ with gr.Blocks(css=CSS, title="ASTOR — Codebase Agent", theme=gr.themes.Base()
 
 
 if __name__ == "__main__":
-    demo.queue().launch()
+    demo.queue().launch(
+        server_name="0.0.0.0",
+        server_port=7860,
+    )
