@@ -1,3 +1,14 @@
+---
+title: ASTOR AI Codebase Agent
+emoji: 🔍
+colorFrom: purple
+colorTo: indigo
+sdk: gradio
+sdk_version: 6.0.2
+app_file: app.py
+pinned: false
+---
+
 <p align="center">
   <h1 align="center">ASTOR</h1>
   <p align="center"><strong>Retrieval-First Codebase Q&A</strong></p>
