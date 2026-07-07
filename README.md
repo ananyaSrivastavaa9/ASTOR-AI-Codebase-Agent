@@ -11,7 +11,7 @@ pinned: false
 ---
 
 <div align="right">
-  <img src="docs/assets/astor-logo.png" alt="ASTOR" height="40"/>
+  <img src="docs/assets/astor-logo.png" alt="ASTOR" height="55"/>
 </div>
 
 <div align="center">
@@ -63,13 +63,13 @@ pinned: false
 
 ## See it in action
 
-> 📹 Add your screen recordings here — one per feature
+> ASTOR in action — indexing, retrieval, debugging, and code understanding.
 
 <table>
   <tr>
     <td align="center" width="50%">
       <img src="docs/assets/demo-ask.gif" width="100%" style="border-radius:8px"/><br/>
-      <sub><b>Ask a question — live thinking trace</b></sub>
+      <sub><b>Ask a question — live retrieval trace</b></sub>
     </td>
     <td align="center" width="50%">
       <img src="docs/assets/demo-bug.gif" width="100%" style="border-radius:8px"/><br/>
@@ -214,7 +214,7 @@ Single RAG makes one retrieval call and answers. The ReAct loop lets the agent t
 **Requires:** Python 3.10+, [Gemini API key](https://aistudio.google.com/apikey)
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/ananyaSrivastavaa9/ASTOR-AI-Codebase-Agent.git
 cd codebase-agent
 python -m venv .venv
 
@@ -302,7 +302,5 @@ codebase-agent/
 ---
 
 <div align="center">
-  <sub> Measured, debugged, and improved as a retrieval system — not a chatbot wrapper. </sub>
+  <sub>Measured, debugged, and improved as a retrieval system — not a chatbot wrapper.</sub>
 </div>
-EOF
-echo "Done"
