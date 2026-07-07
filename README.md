@@ -1,9 +1,9 @@
-<div align="right">
-  <img src="docs/assets/astor-logo.png" alt="ASTOR" height="55"/>
-</div>
+<p align="right">
+  <img src="docs/assets/astor-logo.png" width="130" alt="ASTOR"/>
+</p>
 
 <div align="center">
-  <img src="docs/assets/astor-banner.png" alt="ASTOR Banner" width="100%" style="border-radius:12px"/>
+  <img src="docs/assets/astor-banner.png" width="100%" alt="ASTOR Banner"/>
 </div>
 
 <br/>
