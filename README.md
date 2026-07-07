@@ -9,9 +9,13 @@
 <br/>
 
 <div align="center">
-  <h1>ASTOR</h1>
-  <p><strong>Ask anything about any codebase. Get grounded answers with source citations.</strong></p>
-  <p>Not a chatbot wrapper. A full retrieval pipeline that reads code the way engineers do.</p>
+
+### Retrieval-first AI Codebase Agent
+
+<strong>Ask anything about any codebase. Get grounded answers with source citations.</strong>
+
+Not a chatbot wrapper. A full retrieval pipeline that reads code the way engineers do.
+
 </div>
 
 <br/>
@@ -21,7 +25,7 @@
   <img src="https://img.shields.io/badge/Gemini-Tool_Calling-4285F4?logo=google&logoColor=white"/>
   <img src="https://img.shields.io/badge/ChromaDB-Vector_Store-FF6F00"/>
   <img src="https://img.shields.io/badge/Retrieval-Hybrid_BM25_+_Vector-6366F1"/>
-  <img src="https://img.shields.io/badge/Eval-80%25_Answer_Accuracy-22C55E"/>
+  <img src="https://img.shields.io/badge/Eval-85%25_Answer_Accuracy-22C55E"/>
   <img src="https://img.shields.io/badge/UI-Gradio-F97316"/>
 </div>
 
@@ -134,26 +138,26 @@ Grounded answer with Repo: / File: citations
 ## Architecture
 
 ```
-┌─────────────────── INDEX (once per repo) ───────────────────┐
-│                                                              │
-│  repo path ──► walker.py ──► parser.py ──► chunks           │
-│                                  │                          │
-│                    SentenceTransformer (all-MiniLM-L6-v2)   │
-│                         ├──► ChromaDB  (persistent)         │
-│                         └──► BM25 index (in-memory)         │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
+┌─────────────────── INDEX (once per repo) ──────────────────┐
+│                                                            │
+│  repo path ──► walker.py ──► parser.py ──► chunks          │
+│                                  │                         │
+│                    SentenceTransformer (all-MiniLM-L6-v2)  │
+│                         ├──► ChromaDB  (persistent)        │
+│                         └──► BM25 index (in-memory)        │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
 
-┌─────────────────── QUERY (every question) ──────────────────┐
-│                                                              │
-│  question ──► agent.py ──► tools ──► indexer.search()       │
-│                                           │                 │
-│                           vector top-3 + BM25 top-3         │
-│                           merge · dedupe · fallback         │
-│                                           │                 │
-│                         answer + Repo / File citations       │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
+┌─────────────────── QUERY (every question) ─────────────────┐
+│                                                            │
+│  question ──► agent.py ──► tools ──► indexer.search()      │
+│                                           │                │
+│                           vector top-3 + BM25 top-3        │
+│                           merge · dedupe · fallback        │
+│                                           │                │
+│                         answer + Repo / File citations     │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
 ```
 
 | Component | File | Role |
@@ -261,20 +265,33 @@ Enter one or two local repo paths → index → ask anything.
 
 ```
 codebase-agent/
-├── app.py              # Gradio UI
-├── agent.py            # Gemini tool loop
-├── indexer.py          # ChromaDB + BM25 hybrid search
-├── parser.py           # Tree-sitter chunks
-├── walker.py           # File discovery
-├── tools.py            # Agent tools
+├── app.py                    # Gradio UI
+├── agent.py                 # Gemini ReAct agent loop
+├── indexer.py               # ChromaDB + BM25 retrieval
+├── parser.py                # Tree-sitter AST chunks
+├── walker.py                # Repository scanner
+├── tools.py                 # Agent tools
+├── config.py                # Runtime configuration
+├── rag.py                   # RAG baseline
+├── requirements.txt
+│
 ├── features/
 │   ├── bug_detective.py
-│   ├── onboarding.py
-│   └── code_review.py
-└── eval/
-    ├── questions.py    # 20-question benchmark
-    ├── run_eval.py
-    └── inspect_retrieval.py
+│   ├── code_review.py
+│   └── onboarding.py
+│
+├── eval/
+│   ├── questions.py
+│   ├── run_eval.py
+│   └── inspect_retrieval.py
+│
+├── docs/
+│   └── assets/
+│       ├── astor-banner.png
+│       └── astor-logo.png
+│
+└── scripts/
+    └── generate_banner.py
 ```
 
 ---
