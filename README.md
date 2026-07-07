@@ -1,5 +1,5 @@
 <p align="right">
-  <img src="docs/assets/astor-logo.png" width="130" alt="ASTOR"/>
+  <img src="docs/assets/astor-logo.png" width="100%" alt="ASTOR"/>
 </p>
 
 <div align="center">
