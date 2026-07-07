@@ -9,13 +9,9 @@
 <br/>
 
 <div align="center">
-
 ### Retrieval-first AI Codebase Agent
-
 <strong>Ask anything about any codebase. Get grounded answers with source citations.</strong>
-
 Not a chatbot wrapper. A full retrieval pipeline that reads code the way engineers do.
-
 </div>
 
 <br/>
