@@ -6,13 +6,13 @@
   <img src="docs/assets/astor-banner.png" width="100%" alt="ASTOR Banner"/>
 </div>
 
-<br/>
-
 <div align="center">
+  <h3>Retrieval-first AI Codebase Agent</h3>
 
-### Retrieval-first AI Codebase Agent 
-<strong>Ask anything about any codebase. Get grounded answers with source citations.</strong> 
-Not a chatbot wrapper. A full retrieval pipeline that reads code the way engineers do. 
+  <p>
+    <strong>Ask anything about any codebase. Get grounded answers with source citations.</strong><br/>
+    Not a chatbot wrapper. A full retrieval pipeline that reads code the way engineers do.
+  </p>
 </div>
 
 <br/>
