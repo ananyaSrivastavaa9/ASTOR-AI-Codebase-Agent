@@ -1,3 +1,14 @@
+---
+title: ASTOR AI Codebase Agent
+emoji: 🔍
+colorFrom: purple
+colorTo: indigo
+sdk: gradio
+sdk_version: 5.9.1
+app_file: app.py
+pinned: false
+---
+
 <p align="right">
   <img src="docs/assets/astor-logo.png" alt="ASTOR Logo" width="160"/>
 </p>
