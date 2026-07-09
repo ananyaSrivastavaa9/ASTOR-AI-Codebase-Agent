@@ -1,3 +1,16 @@
+---
+title: {{title}}
+emoji: {{emoji}}
+colorFrom: {{colorFrom}}
+colorTo: {{colorTo}}
+sdk: {{sdk}}
+sdk_version: "{{sdkVersion}}"
+{{#pythonVersion}}
+python_version: "{{pythonVersion}}"
+{{/pythonVersion}}
+app_file: app.py
+pinned: false
+---
 <p align="right">
   <img src="docs/assets/astor-logo.png" alt="ASTOR Logo" width="160"/>
 </p>
