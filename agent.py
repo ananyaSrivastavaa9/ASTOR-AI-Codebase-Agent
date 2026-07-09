@@ -369,6 +369,9 @@ def run_agent_stream(question):
 
             final_text = _append_sources(text, messages)
 
+            if final_text.strip().startswith("I will call"):
+                continue
+
             messages.append({
                 "role": "assistant",
                 "content": final_text
