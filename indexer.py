@@ -77,10 +77,14 @@ def rebuild_index(repo_paths="flask-main"):
 
     bm25_chunks = chunks
     tokenized_chunks = [
-        chunk["code"].split()
+        chunk["code"].split() 
         for chunk in chunks
     ]
-    bm25 = BM25Okapi(tokenized_chunks)
+
+    if not tokenized_chunks:
+        bm25 = None
+    else:
+        bm25 = BM25Okapi(tokenized_chunks)
 
     # Batch-encode all chunks in one call instead of one at a time — each
     # individual model.encode() call pays fixed per-call overhead on top of
