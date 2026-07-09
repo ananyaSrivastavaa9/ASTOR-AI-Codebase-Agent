@@ -52,7 +52,7 @@
 
 ## See it in action
 
-> ASTOR indexing a real codebase, reasoning through files, and answering with grounded citations.
+> Watch ASTOR index a real codebase, retrieve relevant files, reason through the code, and answer with source citations.
 
 <div align="center">
 
