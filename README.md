@@ -39,7 +39,7 @@ pinned: false
 <br/>
 
 <div align="center">
-  <a href="https://huggingface.co/spaces/ananyasrivastavaa9/ASTOR-AI-Codebase-Agent"><strong>🔗 Try Live Demo</strong></a>
+  <a href="https://ananyasrivastavaa9-astor-ai-codebase-agent.hf.space"><strong>🔗 Try Live Demo</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
   <a href="#quick-start"><strong>📦 Run Locally</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
