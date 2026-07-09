@@ -52,30 +52,13 @@
 
 ## See it in action
 
-> ASTOR in action — indexing, retrieval, debugging, and code understanding.
+> ASTOR indexing a real codebase, reasoning through files, and answering with grounded citations.
 
-<table>
-  <tr>
-    <td align="center" width="50%">
-      <img src="docs/assets/demo-ask.gif" width="100%" style="border-radius:8px"/><br/>
-      <sub><b>Ask a question — live retrieval trace</b></sub>
-    </td>
-    <td align="center" width="50%">
-      <img src="docs/assets/demo-bug.gif" width="100%" style="border-radius:8px"/><br/>
-      <sub><b>Bug detective — paste error, get fix</b></sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="50%">
-      <img src="docs/assets/demo-review.gif" width="100%" style="border-radius:8px"/><br/>
-      <sub><b>Code review — structured feedback</b></sub>
-    </td>
-    <td align="center" width="50%">
-      <img src="docs/assets/demo-onboard.gif" width="100%" style="border-radius:8px"/><br/>
-      <sub><b>Repo onboarding — 60 second tour</b></sub>
-    </td>
-  </tr>
-</table>
+<div align="center">
+
+https://github.com/user-attachments/assets/3bd5c89b-81a2-4ea9-ba2e-ed634d54c659
+
+</div>
 
 ---
 
